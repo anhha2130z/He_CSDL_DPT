@@ -28,6 +28,7 @@ import threading
 from typing import Any, Dict, List
 from urllib.parse import quote
 import warnings
+import webbrowser
 
 import cv2
 try:
@@ -945,4 +946,9 @@ if __name__ == "__main__":
     print("   FoodLens CBIR -- Flask Web Server Ready!")
     print("   Truy cap Web Demo tai: http://localhost:5000")
     print("=" * 60)
+    threading.Timer(
+        1.0,
+        webbrowser.open,
+        args=("http://127.0.0.1:5000",),
+    ).start()
     app.run(host="127.0.0.1", port=5000, debug=False)

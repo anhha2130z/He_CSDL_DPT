@@ -291,13 +291,6 @@ body {
   gap: 12px;
 }
 
-.upload-saved-notice {
-  margin-top: 10px;
-  color: var(--success);
-  font-size: 13px;
-  font-weight: 600;
-}
-
 .control-group {
   display: flex;
   flex-direction: column;

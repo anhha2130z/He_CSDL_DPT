@@ -25,7 +25,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const maskThumb = document.getElementById("maskThumb");
   const colorsPalette = document.getElementById("colorsPalette");
   const dbStatsBadge = document.getElementById("dbStatsBadge");
-  const uploadSavedNotice = document.getElementById("uploadSavedNotice");
 
   let selectedFile = null;
   let previewUrl = null;
@@ -150,12 +149,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Render Top-K Matches
       renderResultsList(data.results, data.elapsed_ms);
-      if (uploadSavedNotice && data.saved_image_path) {
-        uploadSavedNotice.textContent = data.image_added_to_index
-          ? `Đã lưu ảnh và đặc trưng vào ${data.saved_image_path}. Tổng cộng ${data.total_images} ảnh trong chỉ mục.`
-          : `Ảnh đã có trong chỉ mục tại ${data.saved_image_path}; không tạo bản sao.`;
-        uploadSavedNotice.classList.remove("hidden");
-      }
       if (dbStatsBadge && data.total_images) {
         fetch("/api/stats")
           .then((res) => res.json())
@@ -226,7 +219,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    timeBadge.textContent = `⚡ Thời gian phản hồi: ${(elapsedMs / 1000).toFixed(2)} giây`;
+    timeBadge.textContent = `⚡ ${(elapsedMs / 1000).toFixed(2)} giây`;
     resultsInfo.classList.remove("hidden");
 
     results.forEach((item) => {

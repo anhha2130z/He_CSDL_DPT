@@ -16,6 +16,7 @@ env/
 !.env.example
 
 # Local food images and generated index data
+data/uploads/
 data/
 database/
 
