@@ -1,16 +1,16 @@
 {
   "schema_version": 2,
   "extractor_version": 5,
-  "total_images": 565,
+  "total_images": 566,
   "raw_dim": 1460,
   "pca_dim": 512,
-  "dataset_fingerprint": "a0cad26ef83e87a5a1fd5bc603660d75705cf2d7d6f8e13038e34ecebd9200df",
+  "dataset_fingerprint": "24735266dfd5d4e4f37899f00a1dea8cbd20ea36fe7a9a966d79eb6ff88fef05",
   "artifacts": {
-    "database.db": "dfcb7d6baf496bc7f21766cbb5aa96371df82269c4f7b9318e0742406e844454",
-    "features.npy": "daa1953444a878d3cb2a10ecbe3e10ca2fab48ce19783c11e0d7c828b73db381",
-    "raw_features.npz": "fa0bba0d03af9fd2cb4f433ad771138c46995ce79c7ed0b5068d3a2acd34fe0e",
+    "database.db": "84d218e5448d8c2bc1b2f79f10680e3feb2ee7c53aefdbcf129b3006e5939a6a",
+    "features.npy": "86e5f3aa9bc248814ce4be603480c727c3501de888a1527526af1e6b44c912da",
+    "raw_features.npz": "807f99d24d2c27b4e0b380e9c63166e14a9593ee275f98be273aaf7bbe6d30e8",
     "pca_model.pkl": "32e9f87690b0bb33daeb7728b8c062bb2e13769464650be0fc027a2991bcf823",
-    "features.csv": "eac415954e5b0f5a1dae95ed310a6fb44a224f3536ab31caafb5946135777083",
-    "faiss.index": "8cd4b6d3257656107559e724c92bad1e5598e2d46ad1c81301ac4d1d1bb3e330"
+    "features.csv": "9af0800b60c75afde9f2515ade3316f0405aff274782ea9370df911ef7a7b370",
+    "faiss.index": "87637a2840db17912c7f9def088f89973f954850b4437985d8286bafb1320efa"
   }
 }
