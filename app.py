@@ -82,6 +82,8 @@ FAISS_INDEX: Any = None
 IMAGE_PATHS: List[str] = []
 IMAGE_RECORDS: List[Dict[str, Any]] = []
 INDEX_MANIFEST: Dict[str, Any] = {}
+IMAGE_CONTENT_HASHES: Dict[str, str] = {}
+IMAGE_FILE_SIGNATURES: Dict[str, tuple[int, int, int]] = {}
 INDEX_LOCK = threading.RLock()
 
 
@@ -183,9 +185,53 @@ def _sha256_file(path: str) -> str:
     return digest.hexdigest()
 
 
-def _dataset_fingerprint(image_paths: List[str] | None = None) -> str:
+def _file_signature(path: str) -> tuple[int, int, int]:
+    stat = os.stat(path)
+    return stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns
+
+
+def _fingerprint_from_hashes(content_hashes: Dict[str, str]) -> str:
     digest = hashlib.sha256()
     digest.update(f"extractor-version:{FEATURE_SCHEMA_VERSION}".encode("ascii"))
+    for relative_path in sorted(content_hashes):
+        relative = relative_path.encode("utf-8")
+        digest.update(len(relative).to_bytes(4, "big"))
+        digest.update(relative)
+        digest.update(bytes.fromhex(content_hashes[relative_path]))
+    return digest.hexdigest()
+
+
+def _validate_indexed_dataset(image_paths: List[str]) -> None:
+    for relative_path in image_paths:
+        normalized_path = relative_path.replace("\\", "/")
+        absolute_path = os.path.join(BASE_DIR, *normalized_path.split("/"))
+        try:
+            signature = _file_signature(absolute_path)
+        except OSError as exc:
+            raise RuntimeError(
+                "An indexed image is missing or unavailable; rebuild the offline index."
+            ) from exc
+
+        if signature != IMAGE_FILE_SIGNATURES.get(normalized_path):
+            try:
+                content_hash = _sha256_file(absolute_path)
+                updated_signature = _file_signature(absolute_path)
+            except OSError as exc:
+                raise RuntimeError(
+                    "An indexed image is missing or unavailable; rebuild the offline index."
+                ) from exc
+            if signature != updated_signature:
+                raise RuntimeError("Dataset files changed; rebuild the offline index before saving uploads.")
+            if content_hash != IMAGE_CONTENT_HASHES.get(normalized_path):
+                raise RuntimeError("Dataset files changed; rebuild the offline index before saving uploads.")
+            IMAGE_FILE_SIGNATURES[normalized_path] = signature
+
+    fingerprint = _fingerprint_from_hashes(IMAGE_CONTENT_HASHES)
+    if fingerprint != INDEX_MANIFEST.get("dataset_fingerprint"):
+        raise RuntimeError("Dataset files changed; rebuild the offline index before saving uploads.")
+
+
+def _dataset_fingerprint(image_paths: List[str] | None = None) -> str:
     supported_ext = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"}
     if image_paths is None:
         image_paths = []
@@ -208,12 +254,11 @@ def _dataset_fingerprint(image_paths: List[str] | None = None) -> str:
         ]
 
     paths.sort(key=lambda item: item[1])
-    for path, relative_path in paths:
-        relative = relative_path.encode("utf-8")
-        digest.update(len(relative).to_bytes(4, "big"))
-        digest.update(relative)
-        digest.update(bytes.fromhex(_sha256_file(path)))
-    return digest.hexdigest()
+    content_hashes = {
+        relative_path: _sha256_file(path)
+        for path, relative_path in paths
+    }
+    return _fingerprint_from_hashes(content_hashes)
 
 
 def _new_temp_path(suffix: str) -> str:
@@ -299,6 +344,7 @@ def _publish_upload_artifacts(staged: Dict[str, str | None]) -> None:
 def persist_uploaded_image(image_bytes: bytes, raw_feature: np.ndarray, pca_vector: np.ndarray) -> tuple[str, bool]:
     """Persist an upload, its raw/PCA vectors, and all aligned search artifacts."""
     global FEATURES_DB, FAISS_INDEX, IMAGE_PATHS, IMAGE_RECORDS, INDEX_MANIFEST
+    global IMAGE_CONTENT_HASHES, IMAGE_FILE_SIGNATURES
 
     image_hash = hashlib.sha256(image_bytes).hexdigest()
     relative_path = f"data/uploads/{image_hash}.jpg"
@@ -318,14 +364,7 @@ def persist_uploaded_image(image_bytes: bytes, raw_feature: np.ndarray, pca_vect
             ) from exc
         if disk_manifest != INDEX_MANIFEST:
             raise RuntimeError("Search index changed on disk; restart the app before saving uploads.")
-        try:
-            current_fingerprint = _dataset_fingerprint(IMAGE_PATHS)
-        except OSError as exc:
-            raise RuntimeError(
-                "An indexed image is missing or unavailable; rebuild the offline index."
-            ) from exc
-        if current_fingerprint != INDEX_MANIFEST.get("dataset_fingerprint"):
-            raise RuntimeError("Dataset files changed; rebuild the offline index before saving uploads.")
+        _validate_indexed_dataset(IMAGE_PATHS)
         if relative_path in IMAGE_PATHS:
             return relative_path, False
 
@@ -362,12 +401,16 @@ def persist_uploaded_image(image_bytes: bytes, raw_feature: np.ndarray, pca_vect
             finally:
                 if os.path.exists(temp_image):
                     os.remove(temp_image)
+        elif _sha256_file(image_path) != image_hash:
+            raise RuntimeError("Stored upload does not match its content hash; remove it and retry.")
 
         staged: Dict[str, str | None] = {}
         artifacts_published = False
         try:
             new_paths = IMAGE_PATHS + [relative_path]
-            next_fingerprint = _dataset_fingerprint(new_paths)
+            next_content_hashes = dict(IMAGE_CONTENT_HASHES)
+            next_content_hashes[relative_path] = image_hash
+            next_fingerprint = _fingerprint_from_hashes(next_content_hashes)
             raw_matrix = np.vstack([checkpoint_features, raw_feature.reshape(1, -1)])
             pca_matrix = np.vstack([FEATURES_DB, pca_vector.astype(np.float32)])
             normalized = pca_matrix.copy()
@@ -440,6 +483,7 @@ def persist_uploaded_image(image_bytes: bytes, raw_feature: np.ndarray, pca_vect
                 json.dump(next_manifest, f, ensure_ascii=False, indent=2)
                 f.write("\n")
 
+            image_signature = _file_signature(image_path)
             _publish_upload_artifacts(staged)
             artifacts_published = True
             staged.clear()
@@ -456,6 +500,11 @@ def persist_uploaded_image(image_bytes: bytes, raw_feature: np.ndarray, pca_vect
             IMAGE_PATHS = new_paths
             IMAGE_RECORDS = IMAGE_RECORDS + [new_record]
             INDEX_MANIFEST = next_manifest
+            IMAGE_CONTENT_HASHES = next_content_hashes
+            IMAGE_FILE_SIGNATURES = {
+                **IMAGE_FILE_SIGNATURES,
+                relative_path: image_signature,
+            }
             return relative_path, True
         except Exception as exc:
             for path in staged.values():
@@ -474,6 +523,7 @@ def persist_uploaded_image(image_bytes: bytes, raw_feature: np.ndarray, pca_vect
 def load_cbir_resources():
     """Load all necessary CBIR artifacts into memory on server startup."""
     global FEATURES_DB, PCA_MODEL, FAISS_INDEX, IMAGE_PATHS, IMAGE_RECORDS, INDEX_MANIFEST
+    global IMAGE_CONTENT_HASHES, IMAGE_FILE_SIGNATURES
 
     if not os.path.exists(MANIFEST_PATH):
         raise RuntimeError(
@@ -563,6 +613,8 @@ def load_cbir_resources():
 
     image_paths: List[str] = []
     image_records: List[Dict[str, Any]] = []
+    image_content_hashes: Dict[str, str] = {}
+    image_file_signatures: Dict[str, tuple[int, int, int]] = {}
     for image_id, raw_path in rows:
         normalized_path = str(raw_path).replace("\\", "/")
         parts = normalized_path.split("/")
@@ -575,6 +627,12 @@ def load_cbir_resources():
             raise RuntimeError(f"Dataset image is missing: {raw_path!r}")
 
         image_paths.append(normalized_path)
+        signature_before = _file_signature(absolute_path)
+        image_content_hashes[normalized_path] = _sha256_file(absolute_path)
+        signature_after = _file_signature(absolute_path)
+        if signature_before != signature_after:
+            raise RuntimeError("Dataset files changed while the search index was loading.")
+        image_file_signatures[normalized_path] = signature_after
         category_slug = parts[-2] if len(parts) >= 3 else "mon_an"
         dish_name = format_dish_name(category_slug)
 
@@ -592,6 +650,8 @@ def load_cbir_resources():
     IMAGE_PATHS = image_paths
     IMAGE_RECORDS = image_records
     INDEX_MANIFEST = manifest
+    IMAGE_CONTENT_HASHES = image_content_hashes
+    IMAGE_FILE_SIGNATURES = image_file_signatures
     print(f"  [OK] Database loaded {len(IMAGE_RECORDS)} food images.")
     print(f"  [OK] Memory Feature Matrix shape: {FEATURES_DB.shape}")
 
@@ -645,6 +705,12 @@ def _search_neighbors(
             if IMAGE_PATHS[index] != excluded_path
         ][:top_k]
     return [index for index, _ in neighbors], [score for _, score in neighbors]
+
+
+def cosine_similarity_percent(score: float) -> float:
+    """Map cosine similarity from [-1, 1] to a display scale from 0 to 100."""
+    bounded_score = max(-1.0, min(float(score), 1.0))
+    return round((bounded_score + 1.0) * 50.0, 1)
 
 
 # ---------------------------------------------------------------------------
@@ -704,7 +770,7 @@ def get_stats():
 @app.route("/api/search", methods=["POST"])
 def search_image():
     """CBIR Search Endpoint: Query image -> Top-5 Similar Dishes (Optimized ultra-fast)."""
-    t0 = time.time()
+    t0 = time.perf_counter()
 
     if "query_image" not in request.files:
         return jsonify({"success": False, "error": "Chưa tải lên tệp ảnh món ăn."}), 400
@@ -821,9 +887,10 @@ def search_image():
                 "relative_path": rec["path"],
                 "cosine_score": cosine_score,
                 "cosine_dist": cosine_dist,
+                "similarity_pct": cosine_similarity_percent(bounded_score),
             })
 
-        elapsed_ms = round((time.time() - t0) * 1000, 1)
+        elapsed_ms = round((time.perf_counter() - t0) * 1000, 1)
 
         # Vector metrics for intermediate illustration
         feature_breakdown = {

@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .then((res) => res.json())
     .then((data) => {
       if (data.success && dbStatsBadge) {
-        dbStatsBadge.textContent = `🗄️ ${data.total_images} Món Ăn (${data.total_categories} Nhóm)`;
+        dbStatsBadge.textContent = `🗄️ ${data.total_images} món ăn · ${data.total_categories} nhóm`;
       }
     })
     .catch((err) => console.warn("Could not fetch stats:", err));
@@ -162,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
           .then((stats) => {
             if (stats.success) {
               dbStatsBadge.textContent =
-                `🗄️ ${stats.total_images} Món Ăn (${stats.total_categories} Nhóm)`;
+                `🗄️ ${stats.total_images} món ăn · ${stats.total_categories} nhóm`;
             }
           })
           .catch((err) => console.warn("Could not refresh stats:", err));
@@ -193,7 +193,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const swatch = document.createElement("div");
         swatch.className = "color-swatch";
         swatch.style.backgroundColor = col.hex;
-        swatch.title = `Màu: ${col.hex} (${col.percent}%)`;
+        swatch.title = `Màu ${col.hex} · ${col.percent}%`;
         const hexLabel = document.createElement("span");
         hexLabel.textContent = col.hex;
         const percentLabel = document.createElement("span");
@@ -207,7 +207,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (varianceMetric && data.feature_breakdown) {
       varianceMetric.textContent =
         `1.460D → ${data.feature_breakdown.pca_dim} chiều ` +
-        `(phương sai giữ lại ${data.feature_breakdown.pca_variance_pct}%)`;
+        `· Giữ lại ${data.feature_breakdown.pca_variance_pct}% phương sai`;
     }
 
     intermediateCard.classList.remove("hidden");
@@ -226,7 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    timeBadge.textContent = `⚡ Phản hồi: ${(elapsedMs / 1000).toFixed(2)}s`;
+    timeBadge.textContent = `⚡ Thời gian phản hồi: ${(elapsedMs / 1000).toFixed(2)} giây`;
     resultsInfo.classList.remove("hidden");
 
     results.forEach((item) => {
@@ -265,31 +265,25 @@ document.addEventListener("DOMContentLoaded", () => {
       const barMeta = document.createElement("div");
       barMeta.className = "similarity-bar-meta";
       const barLabel = document.createElement("span");
-      barLabel.textContent = "Điểm cosine (thang −1 đến 1)";
       const score = Number(item.cosine_score);
       const safeScore = Number.isFinite(score) ? Math.max(-1, Math.min(1, score)) : -1;
+      const rawPercent = Number(item.similarity_pct);
+      const similarityPercent = Number.isFinite(rawPercent)
+        ? Math.max(0, Math.min(100, rawPercent))
+        : ((safeScore + 1) / 2) * 100;
+      barLabel.textContent = "Mức độ tương đồng";
       const scoreLabel = document.createElement("strong");
-      scoreLabel.textContent = safeScore.toFixed(4);
+      scoreLabel.textContent = `${similarityPercent.toFixed(1)}%`;
       barMeta.append(barLabel, scoreLabel);
       const barBackground = document.createElement("div");
       barBackground.className = "similarity-bar-bg";
       const barFill = document.createElement("div");
       barFill.className = "similarity-bar-fill";
-      barFill.style.width = `${((safeScore + 1) / 2) * 100}%`;
+      barFill.style.width = `${similarityPercent}%`;
       barBackground.appendChild(barFill);
       barWrap.append(barMeta, barBackground);
       body.append(title, category, barWrap);
-
-      const metrics = document.createElement("div");
-      metrics.className = "result-metrics";
-      const scoreMain = document.createElement("span");
-      scoreMain.className = "score-main";
-      scoreMain.textContent = safeScore.toFixed(4);
-      const distance = document.createElement("span");
-      distance.className = "dist-metric";
-      distance.textContent = `Cosine distance: ${Number(item.cosine_dist).toFixed(4)}`;
-      metrics.append(scoreMain, distance);
-      card.append(imageBox, body, metrics);
+      card.append(imageBox, body);
 
       resultsList.appendChild(card);
     });

@@ -325,10 +325,10 @@ graph TD
    - *Đầu vào:* Vector đặc trưng ảnh truy vấn ($k$ chiều) và chỉ mục FAISS.
    - *Công thức tính khoảng cách Cosine:*
      $$d_{\text{cos}}(\mathbf{q}, \mathbf{x}_i) = 1.0 - \frac{\mathbf{q} \cdot \mathbf{x}_i}{\|\mathbf{q}\|_2 \|\mathbf{x}_i\|_2} = 1.0 - \mathbf{q}_{\text{norm}} \cdot \mathbf{x}_{i,\text{norm}}$$
-   - *Cosine score:* là tích vô hướng của hai vector đã chuẩn hóa, thuộc khoảng $[-1,1]$; đây là điểm xếp hạng, không phải phần trăm xác suất hoặc độ chính xác.
+   - *Cosine score:* là tích vô hướng của hai vector đã chuẩn hóa, thuộc khoảng $[-1,1]$; đây là điểm xếp hạng, không phải xác suất hoặc độ chính xác.
    - *Đầu ra:* Chỉ số Index và khoảng cách của tối đa 5 ảnh gần nhất, không bao gồm ảnh truy vấn.
 5. **Khối 5: Trình diễn kết quả (Result Presentation Module):**
-   - *Đầu ra:* Hiển thị tối đa 5 ảnh kết quả, xếp hạng theo cosine score/distance; ảnh truy vấn bị loại khỏi kết quả của chính nó. Điểm cosine không phải phần trăm tương đồng hay xác suất.
+   - *Đầu ra:* Hiển thị tối đa 5 ảnh kết quả, xếp hạng theo cosine score; ảnh truy vấn bị loại khỏi kết quả của chính nó. Giao diện quy đổi tuyến tính cosine từ khoảng $[-1,1]$ sang thang $[0,100]\%$ để dễ so sánh; đây không phải xác suất hoặc độ chính xác.
 
 ---
 
@@ -363,7 +363,7 @@ Khi ảnh truy vấn được nạp vào hệ thống, các giá trị và biể
 
 ### 4.5. Đánh giá chất lượng truy hồi và hiệu năng
 - **Chất lượng truy hồi:** Chưa có tập truy vấn độc lập kèm nhãn liên quan để tính Precision@K/Recall@K; do đó không kết luận độ chính xác từ điểm cosine. Ảnh truy vấn được loại khỏi danh sách kết quả để tránh tự khớp.
-- **Điểm số:** Giao diện hiển thị Cosine score và Cosine distance. Đây là thước đo xếp hạng, không phải phần trăm xác suất.
+- **Điểm số:** Giao diện hiển thị phần trăm quy đổi tuyến tính từ cosine score trong khoảng $[-1,1]$. Đây là thang xếp hạng trực quan, không phải xác suất hoặc độ chính xác.
 - **Hiệu năng:** API đo và trả thời gian phản hồi thực tế cho từng truy vấn. Cần chạy benchmark nhiều lần, ghi phần cứng và số ảnh trước khi công bố thời gian trung bình hoặc khẳng định đáp ứng thời gian thực.
 
 ---
@@ -387,15 +387,15 @@ Giao diện ứng dụng được xây dựng theo kiến trúc Full-Stack Web h
     * Huy hiệu thứ hạng nổi bật: **#1 Vàng (Gold)**, **#2 Bạc (Silver)**, **#3 Đồng (Bronze)**, #4 và #5.
     * Ảnh món ăn tương ứng trong cơ sở dữ liệu với hiệu ứng phóng to nhẹ khi di chuột.
     * Tên món ăn tiếng Việt rõ ràng và tên danh mục.
-    * Thanh trực quan hóa Cosine score và hiển thị Cosine distance; các giá trị không được diễn giải như phần trăm tương đồng hoặc độ chính xác.
+    * Thanh trực quan hóa mức độ tương đồng theo phần trăm quy đổi từ điểm cosine; đây không phải xác suất hoặc độ chính xác.
 
 ---
 
 ### 5.2. Tối ưu hóa và đo lường hiệu năng
 
-Hệ thống tiền tính toán các nhân Gabor và tái sử dụng một mặt nạ GrabCut cho từng ảnh truy vấn. Tuy nhiên, chưa có benchmark lặp lại kèm cấu hình phần cứng, số ảnh và phương pháp đo; vì vậy báo cáo không khẳng định các mức thời gian hay hệ số tăng tốc cố định. Khi đánh giá, cần đo riêng từng giai đoạn và báo cáo trung bình/độ phân tán trên cùng một máy.
+Hệ thống tiền tính toán các nhân Gabor, tái sử dụng một mặt nạ GrabCut cho từng ảnh truy vấn và giữ checksum các ảnh đã kiểm tra trong bộ nhớ để tránh đọc lại toàn bộ tập ảnh khi cập nhật ảnh upload. Thời gian vẫn phụ thuộc phần cứng và số ảnh; cần benchmark lặp lại trên cùng cấu hình trước khi khẳng định ngưỡng hiệu năng.
 
-Chất lượng truy hồi cũng cần được đo bằng Precision@K/Recall@K trên tập truy vấn có nhãn. Cosine score là điểm xếp hạng trong khoảng $[-1,1]$, không phải phần trăm xác suất hoặc độ chính xác.
+Chất lượng truy hồi cũng cần được đo bằng Precision@K/Recall@K trên tập truy vấn có nhãn. Cosine score là điểm xếp hạng trong khoảng $[-1,1]$; phần trăm trên giao diện là thang quy đổi tuyến tính, không phải xác suất hoặc độ chính xác.
 
 ---
 

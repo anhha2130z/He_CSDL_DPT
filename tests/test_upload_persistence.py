@@ -13,6 +13,14 @@ import app as app_module
 
 
 class UploadPersistenceTests(unittest.TestCase):
+    def test_cosine_similarity_percent_uses_full_cosine_range(self):
+        self.assertEqual(app_module.cosine_similarity_percent(-1), 0)
+        self.assertEqual(app_module.cosine_similarity_percent(0), 50)
+        self.assertEqual(app_module.cosine_similarity_percent(1), 100)
+        self.assertEqual(app_module.cosine_similarity_percent(0.6), 80)
+        self.assertEqual(app_module.cosine_similarity_percent(2), 100)
+        self.assertEqual(app_module.cosine_similarity_percent(-2), 0)
+
     def test_search_excludes_query_image_for_faiss_and_fallback(self):
         names = ("FAISS_INDEX", "FEATURES_DB", "IMAGE_PATHS")
         previous = {name: getattr(app_module, name) for name in names}
@@ -76,6 +84,8 @@ class UploadPersistenceTests(unittest.TestCase):
             "IMAGE_PATHS",
             "IMAGE_RECORDS",
             "INDEX_MANIFEST",
+            "IMAGE_CONTENT_HASHES",
+            "IMAGE_FILE_SIGNATURES",
         )
         previous = {name: getattr(app_module, name) for name in global_names}
 

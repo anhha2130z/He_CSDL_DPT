@@ -13,7 +13,7 @@ Người dùng tải lên 1 ảnh món ăn truy vấn, hệ thống sẽ:
 - Chuẩn hóa L2-Normalization.
 - Giảm chiều bằng PCA (1.460 chiều &rarr; tối đa 512 chiều, tùy số mẫu); tỷ lệ phương sai được báo theo mô hình thực tế.
 - Xếp hạng theo Cosine score/distance qua FAISS IndexFlatIP (hoặc SciPy vectorized cosine).
-- Trả về Top-K ảnh kèm điểm cosine; điểm này không phải xác suất hay phần trăm độ chính xác.
+- Trả về Top-K ảnh kèm phần trăm quy đổi từ điểm cosine; đây không phải xác suất hay phần trăm độ chính xác.
 
 ---
 

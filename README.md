@@ -113,6 +113,7 @@ python app.py
 - **Chức năng:** Tải ảnh món ăn (tối đa 10 MB, hỗ trợ kéo thả / click); máy chủ giữ nguyên tỷ lệ ảnh bằng cách căn giữa ảnh trên canvas vuông, bù phần thiếu bằng màu trung vị viền ảnh, rồi resize thành JPEG 512×512 trong `data/uploads/`. Ảnh không bị kéo méo hoặc ghép lên nền trắng. Hệ thống tạo mặt nạ GrabCut và lưu vector thô/PCA vào các artifact tương ứng; upload trùng không tạo bản sao. Ảnh truy vấn được lưu trong chỉ mục nhưng bị loại khỏi kết quả của chính truy vấn đó. Nếu dữ liệu nguồn thay đổi, cần rebuild chỉ mục trước khi lưu upload mới.
 - Ảnh upload được giữ lại, không tự động xóa; dung lượng lưu trữ tăng theo số ảnh duy nhất. Nếu cần dọn dữ liệu, hãy dừng ứng dụng, sao lưu trước, xóa có chủ đích rồi rebuild toàn bộ chỉ mục.
 - **Lưu ý:** Thời gian phản hồi và chất lượng truy hồi phụ thuộc thiết bị, dữ liệu và cách chụp. Đánh giá chất lượng bằng Precision@K/Recall@K trên tập truy vấn có nhãn; không suy ra độ chính xác từ điểm cosine.
+- Giao diện hiển thị độ tương đồng theo thang phần trăm quy đổi từ điểm cosine; đây không phải xác suất hai ảnh cùng món.
 
 Ứng dụng mặc định chỉ lắng nghe `127.0.0.1`; nếu muốn truy cập từ máy khác, cần chủ động cấu hình triển khai có kiểm soát thay vì mở server phát triển trực tiếp ra mạng.
 

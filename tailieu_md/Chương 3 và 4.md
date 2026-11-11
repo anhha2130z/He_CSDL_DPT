@@ -167,7 +167,14 @@ Nếu ảnh truy vấn vừa được thêm vào chỉ mục, chính ảnh đó 
 
 ### Bước 6: Hiển thị kết quả
 
-Giao diện hiển thị danh sách ảnh theo thứ tự giảm dần của điểm tương đồng. Điểm số giúp so sánh thứ tự giữa các kết quả trong cùng một lần truy vấn; nó không nên được diễn giải như tỷ lệ phần trăm chính xác.
+Giao diện hiển thị danh sách ảnh theo thứ tự giảm dần của điểm tương đồng. Để biểu diễn trực quan, điểm cosine được quy đổi tuyến tính từ khoảng $[-1,1]$ sang thang $[0,100]\%$:
+
+$$
+\text{Phần trăm hiển thị}
+= \frac{\text{điểm cosine}+1}{2}\times 100\%.
+$$
+
+Đây là thang điểm quy đổi để so sánh và xếp hạng, không phải xác suất, độ chính xác hay tỷ lệ phần trăm hai ảnh chắc chắn cùng món.
 
 ## 4.3. Độ tương đồng cosine
 

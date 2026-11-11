@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FoodLens CBIR — Tìm Kiếm Ảnh Món Ăn Tương Đồng</title>
-  <meta name="description" content="Hệ thống tìm kiếm ảnh món ăn dựa trên nội dung thị giác cổ điển (1.460D -> PCA tối đa 512D) kết hợp SQLite, NumPy và FAISS.">
+  <meta name="description" content="Hệ thống tìm kiếm ảnh món ăn dựa trên nội dung thị giác, sử dụng đặc trưng ảnh và cơ sở dữ liệu vector.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -19,7 +19,7 @@
         <div class="brand-icon">🍲</div>
         <div>
           <h1 class="brand-title">FoodLens CBIR</h1>
-          <p class="brand-subtitle">Hệ thống Tìm Kiếm Ảnh Món Ăn Dựa Trên Nội Dung (Classical Computer Vision)</p>
+          <p class="brand-subtitle">Hệ thống tìm kiếm ảnh món ăn dựa trên nội dung</p>
         </div>
       </div>
       <div class="header-badges">
@@ -66,7 +66,7 @@
         </div>
         <p class="upload-saved-notice hidden" id="uploadSavedNotice" role="status"></p>
 
-        <!-- Intermediate Results (Phần 4.b Báo cáo) -->
+        <!-- Intermediate visual results -->
         <div class="intermediate-card hidden" id="intermediateCard">
           <div class="intermediate-header">
             <h3 class="intermediate-title">🔬 Kết Quả Thị Giác Trung Gian</h3>
@@ -91,26 +91,26 @@
 
           <!-- Dominant Colors -->
           <div class="dominant-section">
-            <span class="mask-label">5 Màu Sắc Chủ Đạo (K-Means Clustering)</span>
+            <span class="mask-label">5 màu sắc chủ đạo</span>
             <div class="colors-palette" id="colorsPalette"></div>
           </div>
 
           <!-- Feature Breakdown Accordion -->
           <div class="feature-metrics-grid" id="featureMetricsGrid">
             <div class="metric-chip">
-              <span class="metric-chip-label">Color (HSV + Lab + Moments)</span>
+              <span class="metric-chip-label">Màu sắc</span>
               <strong class="metric-chip-val">210 chiều</strong>
             </div>
             <div class="metric-chip">
-              <span class="metric-chip-label">Texture (LBP, GLCM, Gabor, FFT)</span>
+              <span class="metric-chip-label">Kết cấu</span>
               <strong class="metric-chip-val">179 chiều</strong>
             </div>
             <div class="metric-chip">
-              <span class="metric-chip-label">Shape (Hu, Contour, Radius, HOG)</span>
+              <span class="metric-chip-label">Hình dạng</span>
               <strong class="metric-chip-val">527 chiều</strong>
             </div>
             <div class="metric-chip">
-              <span class="metric-chip-label">Spatial Layout (4x4 Grid Cells)</span>
+              <span class="metric-chip-label">Bố cục không gian</span>
               <strong class="metric-chip-val">544 chiều</strong>
             </div>
             <div class="metric-chip full-width">
@@ -127,7 +127,7 @@
         <div class="panel-header">
           <div>
             <h2 class="panel-title">🏆 Top Món Ăn Tương Đồng Nhất</h2>
-            <p class="panel-subtitle">Xếp hạng theo Cosine Similarity giảm dần (Cosine Distance tăng dần)</p>
+            <p class="panel-subtitle">Kết quả được sắp xếp từ tương đồng cao đến thấp. Phần trăm là thang quy đổi điểm cosine, không phải xác suất.</p>
           </div>
           <div class="results-header-info hidden" id="resultsInfo">
             <span class="badge badge-accent" id="timeBadge">⚡ 0 ms</span>
@@ -159,8 +159,8 @@
   <!-- Footer -->
   <footer class="app-footer">
     <div class="footer-container">
-      <p>Đồ án môn học: <strong>Cơ sở dữ liệu đa phương tiện (Food CBIR System)</strong></p>
-      <p class="footer-note">Kiến trúc chuẩn hóa: Classical Computer Vision (1460D &rarr; PCA tối đa 512D) | SQLite &bull; NumPy &bull; FAISS</p>
+      <p>Đồ án môn học: <strong>Cơ sở dữ liệu đa phương tiện</strong></p>
+      <p class="footer-note">Thị giác máy tính cổ điển | Vector 1.460 chiều, PCA tối đa 512 chiều | SQLite &bull; NumPy &bull; FAISS</p>
     </div>
   </footer>
 
