@@ -1,0 +1,16 @@
+{
+  "schema_version": 2,
+  "extractor_version": 5,
+  "total_images": 565,
+  "raw_dim": 1460,
+  "pca_dim": 512,
+  "dataset_fingerprint": "a0cad26ef83e87a5a1fd5bc603660d75705cf2d7d6f8e13038e34ecebd9200df",
+  "artifacts": {
+    "database.db": "dfcb7d6baf496bc7f21766cbb5aa96371df82269c4f7b9318e0742406e844454",
+    "features.npy": "daa1953444a878d3cb2a10ecbe3e10ca2fab48ce19783c11e0d7c828b73db381",
+    "raw_features.npz": "fa0bba0d03af9fd2cb4f433ad771138c46995ce79c7ed0b5068d3a2acd34fe0e",
+    "pca_model.pkl": "32e9f87690b0bb33daeb7728b8c062bb2e13769464650be0fc027a2991bcf823",
+    "features.csv": "eac415954e5b0f5a1dae95ed310a6fb44a224f3536ab31caafb5946135777083",
+    "faiss.index": "8cd4b6d3257656107559e724c92bad1e5598e2d46ad1c81301ac4d1d1bb3e330"
+  }
+}
