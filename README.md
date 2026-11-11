@@ -11,21 +11,12 @@ Hệ thống trích xuất vector đặc trưng 1.460 chiều (Màu sắc, Kết
 ```
 CSDLDPT/
 │
-├── data/                               # Tập ảnh món ăn ban đầu và các ảnh upload
-│   └── uploads/                        # Ảnh chuẩn hóa được upload; thêm vào chỉ mục ngay
-├── database/                           # CSDL và các artifact được xác thực cùng manifest
-│   ├── database.db                     # SQLite Database quản lý bảng Images (ImageID, ImagePath)
-│   ├── features.npy                    # Ma trận đặc trưng PCA (tối đa 512D)
-│   ├── pca_model.pkl                   # Mô hình PCA đã huấn luyện
-│   ├── faiss.index                     # Chỉ mục FAISS IndexFlatIP tìm kiếm siêu tốc
-│   ├── features.csv                    # Bảng đối chiếu ImageID, ImagePath và vector PCA
-│   ├── index_manifest.json             # Kiểm tra tính nhất quán / checksum các artifact
-│   └── raw_features.npz                # Vector thô, ánh xạ với đường dẫn ảnh
+├── data/                               # Tập ảnh cục bộ; không được phân phối kèm repository
+├── database/                           # Artifact chỉ mục được tạo cục bộ
 │
 ├── tailieu_md/                         # Tài liệu thuyết minh chi tiết
 │   ├── SYSTEM_OVERVIEW.md              # Tổng quan kiến trúc hệ thống
-│   ├── CHUONG_3_HE_THONG_VA_CO_SO_DU_LIEU.md # Thiết kế hệ thống & CSDL lai
-│   └── CHUONG_4_THUC_NGHIEM_VA_DANH_GIA.md   # Đánh giá thực nghiệm & hiệu năng
+│   └── Chương 3 và 4.md                # Trích xuất đặc trưng và tìm kiếm ảnh
 │
 ├── templates/                          # Giao diện HTML Web Flask
 │   └── index.html                      # Template giao diện tìm kiếm Top 5
@@ -90,6 +81,8 @@ CSDLDPT/
 ---
 
 ## 🛠️ Hướng dẫn Cài đặt và Vận hành
+
+> **Dữ liệu ảnh và chỉ mục không được đưa vào repository.** Bộ ảnh được tổng hợp từ Internet và chưa có quyền phân phối lại; các thư mục `data/` và `database/` vì vậy bị loại khỏi Git. Để chạy hệ thống, hãy tự chuẩn bị bộ ảnh mà bạn có quyền sử dụng trong `data/`, sau đó tạo lại chỉ mục theo hướng dẫn bên dưới.
 
 ### 1. Cài đặt môi trường
 Khuyến nghị sử dụng Python 3.10 hoặc 3.11:

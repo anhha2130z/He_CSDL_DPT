@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FoodLens CBIR — Tìm Kiếm Ảnh Món Ăn Tương Đồng</title>
+  <meta name="description" content="Hệ thống tìm kiếm ảnh món ăn dựa trên nội dung thị giác cổ điển (1.460D -> PCA tối đa 512D) kết hợp SQLite, NumPy và FAISS.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">🍲</div>
+        <div>
+          <h1 class="brand-title">FoodLens CBIR</h1>
+          <p class="brand-subtitle">Hệ thống Tìm Kiếm Ảnh Món Ăn Dựa Trên Nội Dung (Classical Computer Vision)</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <span class="badge badge-accent">⚡ FAISS IndexFlatIP</span>
+        <span class="badge badge-dark">1.460D &rarr; PCA tối đa 512D</span>
+        <span class="badge badge-outline" id="dbStatsBadge">🗄️ Đang tải CSDL...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <main class="app-main">
+    <div class="main-container">
+
+      <!-- Left Column: Query & Feature Extraction -->
+      <section class="panel panel-query">
+        <div class="panel-header">
+          <h2 class="panel-title">📸 Ảnh Món Ăn Truy Vấn</h2>
+          <span class="panel-tag">Đầu vào</span>
+        </div>
+
+        <!-- Dropzone -->
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="fileInput" accept="image/*" hidden>
+          <div class="dropzone-empty" id="dropzoneEmpty">
+            <div class="dropzone-icon">📥</div>
+            <p class="dropzone-text"><strong>Kéo & thả ảnh món ăn vào đây</strong></p>
+            <p class="dropzone-subtext">JPG, PNG, WEBP đều được tự chuẩn hóa thành JPG 512×512 khi tải lên</p>
+            <button type="button" class="btn btn-secondary" id="browseBtn">Chọn Ảnh Từ Máy</button>
+          </div>
+
+          <div class="dropzone-preview hidden" id="dropzonePreview">
+            <img id="previewImg" src="" alt="Query Preview">
+            <button type="button" class="btn-remove-img" id="removeImgBtn" title="Bỏ chọn ảnh">&times;</button>
+          </div>
+        </div>
+
+        <!-- Search Controls -->
+        <div class="controls-row">
+          <button type="button" class="btn btn-primary btn-search-large" id="searchBtn" disabled>
+            <span class="btn-icon">🔍</span>
+            <span>TÌM KIẾM 5 ẢNH GIỐNG NHẤT</span>
+          </button>
+        </div>
+        <p class="upload-saved-notice hidden" id="uploadSavedNotice" role="status"></p>
+
+        <!-- Intermediate Results (Phần 4.b Báo cáo) -->
+        <div class="intermediate-card hidden" id="intermediateCard">
+          <div class="intermediate-header">
+            <h3 class="intermediate-title">🔬 Kết Quả Thị Giác Trung Gian</h3>
+            <span class="badge badge-success">GrabCut + 1460D</span>
+          </div>
+
+          <!-- Masks Comparison -->
+          <div class="mask-comparison">
+            <div class="mask-col">
+              <span class="mask-label">Ảnh Gốc Cắt Chuẩn</span>
+              <div class="mask-frame">
+                <img id="queryThumb" src="" alt="Query Thumb">
+              </div>
+            </div>
+            <div class="mask-col">
+              <span class="mask-label">Mặt Nạ Bóc Tách GrabCut</span>
+              <div class="mask-frame">
+                <img id="maskThumb" src="" alt="GrabCut Mask">
+              </div>
+            </div>
+          </div>
+
+          <!-- Dominant Colors -->
+          <div class="dominant-section">
+            <span class="mask-label">5 Màu Sắc Chủ Đạo (K-Means Clustering)</span>
+            <div class="colors-palette" id="colorsPalette"></div>
+          </div>
+
+          <!-- Feature Breakdown Accordion -->
+          <div class="feature-metrics-grid" id="featureMetricsGrid">
+            <div class="metric-chip">
+              <span class="metric-chip-label">Color (HSV + Lab + Moments)</span>
+              <strong class="metric-chip-val">210 chiều</strong>
+            </div>
+            <div class="metric-chip">
+              <span class="metric-chip-label">Texture (LBP, GLCM, Gabor, FFT)</span>
+              <strong class="metric-chip-val">179 chiều</strong>
+            </div>
+            <div class="metric-chip">
+              <span class="metric-chip-label">Shape (Hu, Contour, Radius, HOG)</span>
+              <strong class="metric-chip-val">527 chiều</strong>
+            </div>
+            <div class="metric-chip">
+              <span class="metric-chip-label">Spatial Layout (4x4 Grid Cells)</span>
+              <strong class="metric-chip-val">544 chiều</strong>
+            </div>
+            <div class="metric-chip full-width">
+              <span class="metric-chip-label">Chuẩn hóa $L_2$ & Chiếu PCA:</span>
+              <strong class="metric-chip-val text-accent" id="pcaVarianceMetric">1.460D → tối đa 512 chiều</strong>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Right Column: Ranked Search Results -->
+      <section class="panel panel-results">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">🏆 Top Món Ăn Tương Đồng Nhất</h2>
+            <p class="panel-subtitle">Xếp hạng theo Cosine Similarity giảm dần (Cosine Distance tăng dần)</p>
+          </div>
+          <div class="results-header-info hidden" id="resultsInfo">
+            <span class="badge badge-accent" id="timeBadge">⚡ 0 ms</span>
+          </div>
+        </div>
+
+        <!-- Initial Placeholder State -->
+        <div class="results-placeholder" id="resultsPlaceholder">
+          <div class="placeholder-icon">🔎</div>
+          <h3 class="placeholder-title">Chưa có ảnh truy vấn</h3>
+          <p class="placeholder-desc">Hãy tải lên một hình ảnh món ăn ở khung bên trái và bấm <strong>Tìm Kiếm</strong> để xem Top 5 món tương đồng nhất từ cơ sở dữ liệu.</p>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state hidden" id="loadingState">
+          <div class="spinner"></div>
+          <p class="loading-text">Đang tiền xử lý GrabCut & Trích xuất 1.460 chiều đặc trưng...</p>
+          <p class="loading-subtext">Nén PCA tối đa 512D & So khớp FAISS IndexFlatIP</p>
+        </div>
+
+        <!-- Results List -->
+        <div class="results-list hidden" id="resultsList"></div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <p>Đồ án môn học: <strong>Cơ sở dữ liệu đa phương tiện (Food CBIR System)</strong></p>
+      <p class="footer-note">Kiến trúc chuẩn hóa: Classical Computer Vision (1460D &rarr; PCA tối đa 512D) | SQLite &bull; NumPy &bull; FAISS</p>
+    </div>
+  </footer>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
