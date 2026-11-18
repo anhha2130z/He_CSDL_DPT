@@ -493,6 +493,68 @@ body {
   color: var(--primary);
 }
 
+.feature-details {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-subtle);
+}
+
+.feature-details summary {
+  padding: 9px 12px;
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.feature-details summary:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.feature-vector-note {
+  padding: 0 12px 8px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.feature-vector-scroll {
+  max-height: 240px;
+  overflow: auto;
+  border-top: 1px solid var(--border);
+  background-color: var(--bg-surface);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+
+.feature-vector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 1px;
+  padding: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.feature-vector-grid > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 6px;
+  background-color: var(--bg-subtle);
+  border-radius: 4px;
+}
+
+.feature-vector-grid dt {
+  color: var(--text-muted);
+}
+
+.feature-vector-grid dd {
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Results Placeholder */
 .results-placeholder {
   padding: 60px 20px;

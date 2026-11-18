@@ -25,6 +25,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const maskThumb = document.getElementById("maskThumb");
   const colorsPalette = document.getElementById("colorsPalette");
   const dbStatsBadge = document.getElementById("dbStatsBadge");
+  const queryFeatureVector = document.getElementById("queryFeatureVector");
+  const queryFeatureNote = document.getElementById("queryFeatureNote");
 
   let selectedFile = null;
   let previewUrl = null;
@@ -202,8 +204,38 @@ document.addEventListener("DOMContentLoaded", () => {
         `1.460D → ${data.feature_breakdown.pca_dim} chiều ` +
         `· Giữ lại ${data.feature_breakdown.pca_variance_pct}% phương sai`;
     }
+    renderFeatureVector(queryFeatureVector, data.query_pca_features);
+    if (queryFeatureNote && Array.isArray(data.query_pca_features)) {
+      queryFeatureNote.textContent =
+        `${data.query_pca_features.length} chiều PCA chuẩn hóa L₂ dùng để so khớp · làm tròn 4 chữ số.`;
+    }
 
     intermediateCard.classList.remove("hidden");
+  }
+
+  function renderFeatureVector(container, values) {
+    if (!container) return;
+    container.replaceChildren();
+
+    if (!Array.isArray(values)) return;
+    const vector = document.createElement("dl");
+    vector.className = "feature-vector-grid";
+    vector.setAttribute("aria-label", "Các thành phần vector PCA chuẩn hóa");
+
+    values.forEach((value, index) => {
+      const item = document.createElement("div");
+      const dimension = document.createElement("dt");
+      dimension.textContent = `PC${index + 1}`;
+      const featureValue = document.createElement("dd");
+      const numericValue = Number(value);
+      featureValue.textContent = Number.isFinite(numericValue)
+        ? numericValue.toFixed(4)
+        : "—";
+      item.append(dimension, featureValue);
+      vector.appendChild(item);
+    });
+
+    container.appendChild(vector);
   }
 
   // 5. Render Ranked Results Cards
@@ -275,7 +307,22 @@ document.addEventListener("DOMContentLoaded", () => {
       barFill.style.width = `${similarityPercent}%`;
       barBackground.appendChild(barFill);
       barWrap.append(barMeta, barBackground);
-      body.append(title, category, barWrap);
+
+      const featureDetails = document.createElement("details");
+      featureDetails.className = "feature-details result-feature-details";
+      const featureSummary = document.createElement("summary");
+      featureSummary.textContent = "Hiển thị vector PCA của ảnh kết quả";
+      const featureNote = document.createElement("p");
+      featureNote.className = "feature-vector-note";
+      const featureCount = Array.isArray(item.pca_features) ? item.pca_features.length : 0;
+      featureNote.textContent =
+        `Vector từ dòng tương ứng trong cơ sở dữ liệu · ${featureCount} chiều PCA chuẩn hóa L₂ · làm tròn 4 chữ số.`;
+      const featureVector = document.createElement("div");
+      featureVector.className = "feature-vector-scroll";
+      renderFeatureVector(featureVector, item.pca_features);
+      featureDetails.append(featureSummary, featureNote, featureVector);
+
+      body.append(title, category, barWrap, featureDetails);
       card.append(imageBox, body);
 
       resultsList.appendChild(card);

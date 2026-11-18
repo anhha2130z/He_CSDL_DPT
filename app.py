@@ -714,6 +714,20 @@ def cosine_similarity_percent(score: float) -> float:
     return round((bounded_score + 1.0) * 50.0, 1)
 
 
+def _normalized_pca_values(vector: np.ndarray) -> list[float]:
+    """Return a finite, L2-normalized PCA vector rounded for display."""
+    values = np.nan_to_num(
+        np.asarray(vector, dtype=np.float64).reshape(-1),
+        nan=0.0,
+        posinf=0.0,
+        neginf=0.0,
+    )
+    norm = float(np.linalg.norm(values))
+    if norm > 0:
+        values = values / norm
+    return [round(float(value), 4) for value in values]
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
@@ -868,11 +882,17 @@ def search_image():
         with INDEX_LOCK:
             indices, scores = _search_neighbors(q_pca, saved_path)
             records_snapshot = IMAGE_RECORDS
+            features_snapshot = FEATURES_DB
 
         # 5. Format Top-5 Results
         results = []
         for rank, (idx, score) in enumerate(zip(indices, scores), 1):
-            if idx < 0 or idx >= len(records_snapshot):
+            if (
+                idx < 0
+                or idx >= len(records_snapshot)
+                or features_snapshot is None
+                or idx >= len(features_snapshot)
+            ):
                 continue
 
             rec = records_snapshot[idx]
@@ -889,6 +909,7 @@ def search_image():
                 "cosine_score": cosine_score,
                 "cosine_dist": cosine_dist,
                 "similarity_pct": cosine_similarity_percent(bounded_score),
+                "pca_features": _normalized_pca_values(features_snapshot[idx]),
             })
 
         elapsed_ms = round((time.perf_counter() - t0) * 1000, 1)
@@ -921,6 +942,8 @@ def search_image():
             "image_added_to_index": image_added,
             "total_images": len(IMAGE_RECORDS),
             "dominant_colors": dominant_colors,
+            "feature_representation": "L2-normalized PCA projection",
+            "query_pca_features": _normalized_pca_values(q_pca[0]),
             "feature_breakdown": feature_breakdown,
             "results": results,
         })

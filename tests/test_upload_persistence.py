@@ -1,11 +1,14 @@
 import csv
+import io
 import json
 import os
 import pickle
 import sqlite3
 import tempfile
 import unittest
+from unittest.mock import patch
 
+import cv2
 import numpy as np
 from sklearn.decomposition import PCA
 
@@ -13,6 +16,51 @@ import app as app_module
 
 
 class UploadPersistenceTests(unittest.TestCase):
+    def test_search_returns_normalized_pca_vectors_for_query_and_matches(self):
+        class FakePCA:
+            n_components_ = 2
+            explained_variance_ratio_ = np.asarray([0.6, 0.4])
+
+            def transform(self, _features):
+                return np.asarray([[1.0, 0.0]], dtype=np.float32)
+
+        encoded_ok, encoded_image = cv2.imencode(
+            ".jpg", np.zeros((32, 32, 3), dtype=np.uint8)
+        )
+        self.assertTrue(encoded_ok)
+        records = [{
+            "image_id": 1,
+            "path": "data/example/match.jpg",
+            "category": "example",
+            "dish_name": "Example dish",
+            "url": "/data/example/match.jpg",
+        }]
+
+        with (
+            patch.object(app_module, "FEATURES_DB", np.asarray([[3.0, 4.0]], dtype=np.float32)),
+            patch.object(app_module, "PCA_MODEL", FakePCA()),
+            patch.object(app_module, "FAISS_INDEX", None),
+            patch.object(app_module, "IMAGE_PATHS", ["data/example/match.jpg"]),
+            patch.object(app_module, "IMAGE_RECORDS", records),
+            patch.object(app_module, "normalize_uploaded_image", return_value=encoded_image.tobytes()),
+            patch.object(app_module, "create_foreground_mask", return_value=np.full((224, 224), 255, dtype=np.uint8)),
+            patch.object(app_module, "get_dominant_colors", return_value=[]),
+            patch.object(app_module, "extract_raw_features", return_value=np.ones(1460)),
+            patch.object(app_module, "persist_uploaded_image", return_value=("data/uploads/query.jpg", False)),
+            patch.object(app_module, "_search_neighbors", return_value=([0], [0.8])),
+        ):
+            response = app_module.app.test_client().post(
+                "/api/search",
+                data={"query_image": (io.BytesIO(b"upload"), "query.jpg", "image/jpeg")},
+                content_type="multipart/form-data",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload["feature_representation"], "L2-normalized PCA projection")
+        self.assertEqual(payload["query_pca_features"], [1.0, 0.0])
+        self.assertEqual(payload["results"][0]["pca_features"], [0.6, 0.8])
+
     def test_cosine_similarity_percent_uses_full_cosine_range(self):
         self.assertEqual(app_module.cosine_similarity_percent(-1), 0)
         self.assertEqual(app_module.cosine_similarity_percent(0), 50)
